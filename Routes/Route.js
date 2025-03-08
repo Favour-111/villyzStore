@@ -2,7 +2,7 @@ const express = require("express");
 const UserRoutes = express.Router();
 const UserModel = require("../Model/UserModel");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 require("dotenv").config(); // Ensure dotenv is required
 const TokenModel = require("../Model/TokenModel");
 const nodemailer = require("nodemailer");
@@ -84,7 +84,7 @@ UserRoutes.post("/users", async (req, res) => {
       userid: user._id,
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
-    const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
+    const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
     await verifyEmail(user.email, link);
     return res.status(201).json({
       success: true,
@@ -263,7 +263,7 @@ UserRoutes.post("/login", async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         }).save();
       }
-      const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
+      const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
       await verifyEmail(user.email, link);
       return res.status(201).json({
         success: false,
@@ -363,7 +363,7 @@ UserRoutes.post("/forgot_password", async (req, res) => {
       from: "villyz@gmail.com",
       to: user.email,
       subject: "Reset Password",
-      text: `Click the link to reset your password: http://localhost:3000/reset-password/${user._id}/${token.token}`,
+      text: `Click the link to reset your password: https://villyz-store.onrender.com/reset-password/${user._id}/${token.token}`,
     };
 
     // Send email
