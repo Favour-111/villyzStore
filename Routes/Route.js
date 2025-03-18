@@ -7,6 +7,7 @@ require("dotenv").config(); // Ensure dotenv is required
 const TokenModel = require("../Model/TokenModel");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const AddressModel = require("../Model/AddressModel");
 // User Registration
 
 UserRoutes.get("/", async (req, res) => {
@@ -44,7 +45,8 @@ const verifyEmail = (email, link) => {
 };
 UserRoutes.post("/users", async (req, res) => {
   try {
-    const { FirstName, LastName, email, password, phoneNumber } = req.body;
+    const { FirstName, LastName, email, password, phoneNumber, address } =
+      req.body;
 
     // Check if user already exists
     const EmailCheck = await UserModel.findOne({ email: email });
@@ -77,6 +79,13 @@ UserRoutes.post("/users", async (req, res) => {
       phoneNumber,
       CartData: cart,
       Wishlist: list,
+      address: {
+        street: address.street || "",
+        city: address.city || "",
+        postalCode: address.postalCode || "",
+        country: address.country || "",
+        state: address.state || "",
+      },
     });
 
     // Generate token
@@ -84,7 +93,7 @@ UserRoutes.post("/users", async (req, res) => {
       userid: user._id,
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
-    const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
+    const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
     await verifyEmail(user.email, link);
     return res.status(201).json({
       success: true,
@@ -263,7 +272,7 @@ UserRoutes.post("/login", async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         }).save();
       }
-      const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
+      const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
       await verifyEmail(user.email, link);
       return res.status(201).json({
         success: false,
@@ -363,7 +372,7 @@ UserRoutes.post("/forgot_password", async (req, res) => {
       from: "villyz@gmail.com",
       to: user.email,
       subject: "Reset Password",
-      text: `Click the link to reset your password: https://villyz-store.onrender.com/reset-password/${user._id}/${token.token}`,
+      text: `Click the link to reset your password: http://localhost:3000/reset-password/${user._id}/${token.token}`,
     };
 
     // Send email
@@ -499,4 +508,87 @@ UserRoutes.delete("/deleteuser/:id", async (req, res) => {
     });
   }
 });
+
+// Add a new address
+UserRoutes.post("/addAddress", async (req, res) => {
+  try {
+    const { userId, street, state, city, postalCode, country, isDefault } =
+      req.body;
+
+    // If setting an address as default, update all others to false
+    if (isDefault) {
+      await AddressModel.updateMany({ userId }, { isDefault: false });
+    }
+
+    // Create and save new address
+    const newAddress = new AddressModel({
+      userId,
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+      isDefault,
+    });
+    await newAddress.save();
+
+    res
+      .status(201)
+      .json({ message: "Address added successfully!", address: newAddress });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all addresses for a user
+UserRoutes.get("/address/:id", async (req, res) => {
+  try {
+    const addresses = await AddressModel.find({ userId: req.params.id });
+    res.json(addresses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+//deleting address
+UserRoutes.delete("/address/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleteAddress = await AddressModel.findByIdAndDelete(id);
+    if (!deleteAddress) {
+      return res.status(404).send({
+        success: false,
+        msg: "Address not found",
+      });
+    }
+    res.send({
+      success: true,
+      msg: "Address deleted",
+      deleteAddress,
+    });
+  } catch (err) {
+    console.error("Error deleting Address:", err);
+    res.status(500).send({
+      success: false,
+      msg: "Error deleting Address",
+    });
+  }
+});
+
+// Set an address as default
+UserRoutes.put("/addresses/:id/set-default", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Set all addresses' isDefault to false
+    await AddressModel.updateMany({}, { isDefault: false });
+
+    // Set the selected address as default
+    await AddressModel.findByIdAndUpdate(id, { isDefault: true });
+
+    res.json({ success: true, message: "Default address updated" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = UserRoutes;

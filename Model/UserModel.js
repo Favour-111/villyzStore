@@ -2,41 +2,48 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   FirstName: {
-    type: String, // ✅ Corrected data type
+    type: String,
     required: true,
   },
   LastName: {
-    type: String, // ✅ Corrected data type
+    type: String,
     required: true,
   },
   email: {
-    type: String, // ✅ Corrected data type
+    type: String,
     required: true,
     unique: true,
-    lowercase: true, // ✅ Ensures email is stored in lowercase
+    lowercase: true,
     trim: true,
   },
   password: {
-    type: String, // ✅ Corrected data type
+    type: String,
     required: true,
-    minlength: 6, // ✅ Enforces minimum password length
+    minlength: 6,
   },
   phoneNumber: {
-    type: String, // ✅ Corrected data type
+    type: String,
     required: true,
-    match: [/^\d{10,15}$/, "Invalid phone number"], // ✅ Enforces phone number validation
+    match: [/^\d{10,15}$/, "Invalid phone number"],
+  },
+  address: {
+    street: { type: String },
+    state: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
+    country: { type: String },
   },
   CartData: {
-    type: Object, // ✅ Corrected data type
+    type: Object,
     default: {},
   },
   Wishlist: {
-    type: Object, // ✅ Corrected data type
+    type: Object,
     default: {},
   },
   date: {
-    type: Date, // ✅ Corrected data type
-    default: Date.now, // ✅ Corrected function reference
+    type: Date,
+    default: Date.now,
   },
   isConfirmed: {
     type: Boolean,

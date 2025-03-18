@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const Route = require("./Routes/Route");
+const AdminRoute = require("./Routes/AdminRoute");
 dotenv.config();
 
 // Connecting to MongoDB
@@ -18,6 +19,7 @@ mongoose
 //Port
 app.use(express.json());
 app.use(cors());
+app.use(AdminRoute);
 app.use(Route);
 
 // Starting the server
