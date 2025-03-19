@@ -206,20 +206,13 @@ route.post("/category", upload2.single("image"), async (req, res) => {
       CategoryDB.length > 0 ? CategoryDB[CategoryDB.length - 1].id + 1 : 1;
 
     const { name, visibility } = req.body;
-
-    let imageUrl = "";
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "categories", // Store in a specific folder in Cloudinary
-      });
-      imageUrl = result.secure_url; // Get the secure URL of the uploaded image
-    }
+    let imageUrl = req.file ? req.file.path : ""; // Use Cloudinary URL from Multer
 
     const createCategory = await CategoryModel.create({
       id: Id,
       name,
       visibility,
-      image: imageUrl, // Store the Cloudinary URL
+      image: imageUrl, // Store Cloudinary URL
     });
 
     if (createCategory) {
@@ -243,6 +236,7 @@ route.post("/category", upload2.single("image"), async (req, res) => {
     });
   }
 });
+
 //getting all category
 route.get("/getallCategory", async (req, res) => {
   const response = await CategoryModel.find();
@@ -298,28 +292,17 @@ route.put("/category/:id", upload2.single("image"), async function (req, res) {
   const { name, visibility } = req.body;
 
   try {
-    let imageUrl;
-
-    // Check if a new image is uploaded
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "categories", // Optional: Specify a folder in Cloudinary
-      });
-      imageUrl = result.secure_url; // Extract the secure URL from the response
-    }
+    let imageUrl = req.file ? req.file.path : null; // Use existing Cloudinary URL
 
     // Prepare the update fields
-    const updateFields = {
-      name,
-      visibility,
-    };
+    const updateFields = { name, visibility };
 
-    // Add the image URL if it exists
+    // Add the new image URL if a new image is uploaded
     if (imageUrl) {
       updateFields.image = imageUrl;
     }
 
-    // Update the product in the database
+    // Update the category in the database
     const response = await CategoryModel.findByIdAndUpdate(id, updateFields, {
       new: true,
       runValidators: true,
@@ -328,13 +311,13 @@ route.put("/category/:id", upload2.single("image"), async function (req, res) {
     if (response) {
       return res.status(200).json({
         success: true,
-        response: response,
-        msg: "category updated successfully",
+        response,
+        msg: "Category updated successfully",
       });
     } else {
       return res.status(404).json({
         success: false,
-        msg: "category not found",
+        msg: "Category not found",
       });
     }
   } catch (error) {
@@ -346,17 +329,12 @@ route.put("/category/:id", upload2.single("image"), async function (req, res) {
     });
   }
 });
+
 route.post("/blog", upload3.single("image"), async (req, res) => {
   try {
     const { BlogTitle, BlogDate, BlogVisibility, BlogDescription } = req.body;
 
-    let imageUrl = "";
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "blogs", // Store in a specific folder in Cloudinary
-      });
-      imageUrl = result.secure_url; // Get the secure URL of the uploaded image
-    }
+    let imageUrl = req.file ? req.file.path : ""; // Use the existing Cloudinary URL
 
     const createBlog = await BlogModel.create({
       BlogTitle,

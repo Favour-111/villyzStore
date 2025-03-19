@@ -15,21 +15,24 @@ const storage1 = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "uploads", // All uploaded files will be stored in this folder
-    format: async (req, file) => file.mimetype.split("/")[1], // Use the original file name without extension
+    format: async (req, file) => file.mimetype.split("/")[1], // Use the original file format
+    public_id: (req, file) => file.originalname.split(".")[0], // Use the original file name without extension
   },
 });
 const storage2 = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "categories", // All uploaded files will be stored in this folder
-    format: async (req, file) => file.mimetype.split("/")[1],
+    format: async (req, file) => file.mimetype.split("/")[1], // Use the original file format
+    public_id: (req, file) => file.originalname.split(".")[0], // Use the original file name without extension
   },
 });
 const storage3 = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "blogs", // All uploaded files will be stored in this folder
-    format: async (req, file) => file.mimetype.split("/")[1],
+    format: async (req, file) => file.mimetype.split("/")[1], // Use the original file format
+    public_id: (req, file) => file.originalname.split(".")[0], // Use the original file name without extension
   },
 });
 
