@@ -45,8 +45,14 @@ const verifyEmail = (email, link) => {
 };
 UserRoutes.post("/users", async (req, res) => {
   try {
-    const { FirstName, LastName, email, password, phoneNumber, address } =
-      req.body;
+    const {
+      FirstName,
+      LastName,
+      email,
+      password,
+      phoneNumber,
+      address = {},
+    } = req.body;
 
     // Check if user already exists
     const EmailCheck = await UserModel.findOne({ email: email });
