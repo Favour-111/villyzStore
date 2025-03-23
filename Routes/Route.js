@@ -86,6 +86,10 @@ UserRoutes.post("/users", async (req, res) => {
       CartData: cart,
       Wishlist: list,
       address: {
+        FirstName: address.FirstName || "",
+        LastName: address.LastName || "",
+        PhoneNumber: address.PhoneNumber || "",
+        Fee: address.Fee || "",
         street: address.street || "",
         city: address.city || "",
         postalCode: address.postalCode || "",
@@ -518,8 +522,19 @@ UserRoutes.delete("/deleteuser/:id", async (req, res) => {
 // Add a new address
 UserRoutes.post("/addAddress", async (req, res) => {
   try {
-    const { userId, street, state, city, postalCode, country, isDefault } =
-      req.body;
+    const {
+      userId,
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+      isDefault,
+      FirstName,
+      LastName,
+      PhoneNumber,
+      Fee,
+    } = req.body;
 
     // If setting an address as default, update all others to false
     if (isDefault) {
@@ -535,6 +550,10 @@ UserRoutes.post("/addAddress", async (req, res) => {
       postalCode,
       country,
       isDefault,
+      FirstName,
+      LastName,
+      PhoneNumber,
+      Fee,
     });
     await newAddress.save();
 
