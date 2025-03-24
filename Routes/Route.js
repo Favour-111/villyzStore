@@ -25,8 +25,23 @@ const verifyEmail = (email, link) => {
   const mailOptions = {
     from: "villyz@gmail.com",
     to: email,
-    subject: "verify email",
-    text: link,
+    subject: "Verify Your Email Address",
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="color: #333;">Email Verification</h2>
+        <p>Hello,</p>
+        <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="${link}" style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
+            Verify Email
+          </a>
+        </div>
+        <p>If the button above doesn’t work, you can also verify your email by clicking the link below:</p>
+        <p><a href="${link}" style="word-break: break-all; color: #007bff;">${link}</a></p>
+        <p>If you did not sign up for this account, please ignore this email.</p>
+        <p>Best regards,<br>Villyz Team</p>
+      </div>
+    `,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
@@ -381,8 +396,26 @@ UserRoutes.post("/forgot_password", async (req, res) => {
     const mailOptions = {
       from: "villyz@gmail.com",
       to: user.email,
-      subject: "Reset Password",
-      text: `Click the link to reset your password: http://localhost:3000/reset-password/${user._id}/${token.token}`,
+      subject: "Password Reset Request",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #333;">Reset Your Password</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset your password. Click the button below to reset it:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="http://localhost:3000/reset-password/${user._id}/${token.token}" 
+               style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
+              Reset Password
+            </a>
+          </div>
+          <p>If you did not request a password reset, please ignore this email.</p>
+          <p>If the button above doesn’t work, copy and paste the link below into your browser:</p>
+          <p><a href="http://localhost:3000/reset-password/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
+            http://localhost:3000/reset-password/${user._id}/${token.token}
+          </a></p>
+          <p>Best regards,<br>Villyz Team</p>
+        </div>
+      `,
     };
 
     // Send email
