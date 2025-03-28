@@ -260,6 +260,37 @@ UserRoutes.post("/removeFromCart", fetchUser, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+UserRoutes.post("/deleteFromCart", fetchUser, async (req, res) => {
+  try {
+    console.log("Deleting item:", req.body.itemId);
+
+    let userData = await UserModel.findById(req.user.id);
+
+    if (!userData || !userData.CartData) {
+      return res.status(400).json({ error: "Cart is empty or user not found" });
+    }
+
+    if (userData.CartData[req.body.itemId]) {
+      // Remove the item completely
+      delete userData.CartData[req.body.itemId];
+
+      await UserModel.findByIdAndUpdate(req.user.id, {
+        $set: { CartData: userData.CartData },
+      });
+
+      return res.json({
+        message: "Item completely removed from cart",
+        cart: userData.CartData,
+      });
+    } else {
+      return res.status(400).json({ error: "Item not found in cart" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 //endpoint to get cart
 UserRoutes.post("/getCart", fetchUser, async (req, res) => {
   console.log("GetCart");
