@@ -8,6 +8,7 @@ const TokenModel = require("../Model/TokenModel");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const AddressModel = require("../Model/AddressModel");
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // User Registration
 
 UserRoutes.get("/", async (req, res) => {
@@ -118,7 +119,7 @@ UserRoutes.post("/users", async (req, res) => {
       userid: user._id,
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
-    const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
+    const link = `https://villyz-store.vercel.app/users/${user._id}/verify/${token.token}`;
     await verifyEmail(user.email, link);
     return res.status(201).json({
       success: true,
@@ -297,7 +298,7 @@ UserRoutes.post("/login", async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         }).save();
       }
-      const link = `http://localhost:3000/users/${user._id}/verify/${token.token}`;
+      const link = `https://villyz-store.vercel.app/users/${user._id}/verify/${token.token}`;
       await verifyEmail(user.email, link);
       return res.status(201).json({
         success: false,
@@ -403,15 +404,15 @@ UserRoutes.post("/forgot_password", async (req, res) => {
           <p>Hello,</p>
           <p>We received a request to reset your password. Click the button below to reset it:</p>
           <div style="text-align: center; margin: 20px 0;">
-            <a href="http://localhost:3000/reset-password/${user._id}/${token.token}" 
+            <a href="https://villyz-store.vercel.app/${user._id}/${token.token}" 
                style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
               Reset Password
             </a>
           </div>
           <p>If you did not request a password reset, please ignore this email.</p>
           <p>If the button above doesn’t work, copy and paste the link below into your browser:</p>
-          <p><a href="http://localhost:3000/reset-password/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
-            http://localhost:3000/reset-password/${user._id}/${token.token}
+          <p><a href="https://villyz-store.vercel.app/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
+            https://villyz-store.vercel.app/${user._id}/${token.token}
           </a></p>
           <p>Best regards,<br>Villyz Team</p>
         </div>
@@ -646,6 +647,50 @@ UserRoutes.put("/addresses/:id/set-default", async (req, res) => {
     res.json({ success: true, message: "Default address updated" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+UserRoutes.post("/checkout", async (req, res) => {
+  const { products, shippingFee } = req.body;
+
+  const lineItems = products.map((product) => ({
+    price_data: {
+      currency: "usd",
+      product_data: {
+        name: product.name,
+        images: [product.image],
+      },
+      unit_amount: Math.round(Number(product.price) * 100),
+    },
+    quantity: product.quantity,
+  }));
+
+  // Add shipping fee as a separate line item
+  if (shippingFee) {
+    lineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: "Shipping Fee",
+        },
+        unit_amount: Math.round(Number(shippingFee) * 100), // Convert to cents
+      },
+      quantity: 1,
+    });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: "https://villyz-store.vercel.app/success",
+      cancel_url: "https://villyz-store.vercel.app/cancel",
+    });
+
+    res.json({ id: session.id });
+  } catch (error) {
+    console.error("Stripe Checkout Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
