@@ -404,15 +404,15 @@ UserRoutes.post("/forgot_password", async (req, res) => {
           <p>Hello,</p>
           <p>We received a request to reset your password. Click the button below to reset it:</p>
           <div style="text-align: center; margin: 20px 0;">
-            <a href="https://villyz-store.vercel.app/${user._id}/${token.token}" 
+            <a href="https://villyz-store.vercel.app/reset-password/${user._id}/${token.token}" 
                style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
               Reset Password
             </a>
           </div>
           <p>If you did not request a password reset, please ignore this email.</p>
           <p>If the button above doesn’t work, copy and paste the link below into your browser:</p>
-          <p><a href="https://villyz-store.vercel.app/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
-            https://villyz-store.vercel.app/${user._id}/${token.token}
+          <p><a href="https://villyz-store.vercel.app/reset-password/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
+            https://villyz-store.vercel.app/reset-password/${user._id}/${token.token}
           </a></p>
           <p>Best regards,<br>Villyz Team</p>
         </div>
