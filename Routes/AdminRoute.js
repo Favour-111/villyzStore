@@ -6,6 +6,7 @@ const BlogModel = require("../Model/BlogModel");
 const { upload1, upload2, upload3 } = require("../upload"); // Correctly import upload config
 const { cloudinary } = require("../cloudinary");
 const mongoose = require("mongoose");
+const OrderModel = require("../Model/OrderModel");
 //applying multer
 //creating product
 route.post("/products", upload1.single("image"), async (req, res) => {
@@ -395,79 +396,131 @@ route.delete("/blog/delete/:id", async (req, res) => {
   }
 });
 
-// // //deleting all products
-// // route.delete("/products/delete", async (req, res) => {
-// //   try {
-// //     const deleteProduct = await ProductModel.deleteMany();
-// //     res.send({ success: true, message: "products deleted successfully" });
-// //   } catch (error) {
-// //     console.log(error.message);
-// //   }
-// // });
-// // //getting single category
-// route.get("/category/:id", async function (req, res) {
-//   const { id } = req.params;
-//   const response = await CategoryModel.findById(id);
-//   if (response) {
-//     res.status(200).send({ success: true, response: response });
-//   } else {
-//     res.status(404).send({ success: false, response: "category not found" });
-//   }
-// });
-// // //editing
+route.post("/addOrder", async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      OrderPrice, // Changed to camelCase
+      PaymentStatus,
+      paymentReference,
+      DeliveryFee,
+      orderStatus, // Default value
+      PhoneNumber,
+      cartItems = [], // Ensure it's always an array
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+    } = req.body;
 
-// route.put("/category/:id", upload2.single("image"), async function (req, res) {
-//   const { id } = req.params;
-//   const { name, visibility } = req.body;
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ error: "Cart items cannot be empty" });
+    }
 
-//   try {
-//     let imageUrl;
+    const newOrder = new OrderModel({
+      name,
+      email,
+      OrderPrice,
+      PaymentStatus,
+      paymentReference,
+      PhoneNumber,
+      DeliveryFee,
+      orderStatus,
+      Orders: cartItems.map((item) => ({
+        productId: item._id,
+        name: item.productName,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+    });
 
-//     // Check if a new image is uploaded
-//     if (req.file) {
-//       const result = await cloudinary.uploader.upload(req.file.path, {
-//         folder: "categories", // Optional: Specify a folder in Cloudinary
-//       });
-//       imageUrl = result.secure_url; // Extract the secure URL from the response
-//     }
+    await newOrder.save();
+    res
+      .status(201)
+      .json({ message: "Order placed successfully", order: newOrder });
+  } catch (error) {
+    console.error("Error placing order:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
 
-//     // Prepare the update fields
-//     const updateFields = {
-//       name,
-//       visibility,
-//     };
+// 📌 Get a single order by ID
+route.get("/order/:id", async (req, res) => {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
-//     // Add the image URL if it exists
-//     if (imageUrl) {
-//       updateFields.image = imageUrl;
-//     }
+// 📌 Update order status automatically (e.g., from "Pending" to "Delivered")
+route.put("/updateOrderStatus/:id", async (req, res) => {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
-//     // Update the product in the database
-//     const response = await CategoryModel.findByIdAndUpdate(id, updateFields, {
-//       new: true,
-//       runValidators: true,
-//     });
+    // Example: If order status is pending, change it to delivered
+    order.orderStatus = "Delivered";
 
-//     if (response) {
-//       return res.status(200).json({
-//         success: true,
-//         response: response,
-//         msg: "category updated successfully",
-//       });
-//     } else {
-//       return res.status(404).json({
-//         success: false,
-//         msg: "category not found",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error updating category:", error);
-//     return res.status(500).json({
-//       success: false,
-//       msg: "Server error",
-//       error: error.message,
-//     });
-//   }
-// });
+    await order.save();
+    res.json({ message: "Order status updated", order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// 📌 Delete a single order by ID
+route.delete("/deleteOrder/:id", async (req, res) => {
+  try {
+    const deletedOrder = await OrderModel.findByIdAndDelete(req.params.id);
+    if (!deletedOrder) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    res.json({ message: "Order deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// 📌 Get all orders
+route.get("/allOrders", async (req, res) => {
+  try {
+    const orders = await OrderModel.find().sort({ createdAt: -1 }); // Sort by latest orders first
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+route.delete("/deleteOrders", async (req, res) => {
+  try {
+    const response = await OrderModel.deleteMany({}); // Ensure it deletes all documents
+
+    if (response.deletedCount > 0) {
+      res.status(200).json({ message: "Orders deleted successfully" });
+    } else {
+      res.status(404).json({ message: "No orders found to delete" });
+    }
+  } catch (error) {
+    console.error("Error deleting orders:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 module.exports = route;

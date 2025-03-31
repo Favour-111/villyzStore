@@ -700,9 +700,7 @@ UserRoutes.post("/checkout", async (req, res) => {
     lineItems.push({
       price_data: {
         currency: "usd",
-        product_data: {
-          name: "Shipping Fee",
-        },
+        product_data: { name: "Shipping Fee" },
         unit_amount: Math.round(Number(shippingFee) * 100), // Convert to cents
       },
       quantity: 1,
@@ -718,7 +716,13 @@ UserRoutes.post("/checkout", async (req, res) => {
       cancel_url: "https://villyz-store.vercel.app/cancel",
     });
 
-    res.json({ id: session.id });
+    // Fetch payment_intent separately
+    const sessionDetails = await stripe.checkout.sessions.retrieve(session.id);
+
+    res.json({
+      id: session.id,
+      paymentReference: sessionDetails.payment_intent, // ✅ Include payment reference
+    });
   } catch (error) {
     console.error("Stripe Checkout Error:", error);
     res.status(500).json({ error: error.message });
