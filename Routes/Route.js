@@ -8,6 +8,7 @@ const TokenModel = require("../Model/TokenModel");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const AddressModel = require("../Model/AddressModel");
+const OrderModel = require("../Model/OrderModel");
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // User Registration
 
@@ -680,6 +681,63 @@ UserRoutes.put("/addresses/:id/set-default", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+UserRoutes.post("/addOrder", async (req, res) => {
+  try {
+    const {
+      UserID,
+      name,
+      email,
+      OrderPrice, // Changed to camelCase
+      PaymentStatus,
+      paymentReference,
+      DeliveryFee,
+      orderStatus, // Default value
+      PhoneNumber,
+      cartItems = [], // Ensure it's always an array
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+    } = req.body;
+
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ error: "Cart items cannot be empty" });
+    }
+
+    const newOrder = new OrderModel({
+      UserID,
+      name,
+      email,
+      OrderPrice,
+      PaymentStatus,
+      paymentReference,
+      PhoneNumber,
+      DeliveryFee,
+      orderStatus,
+      Orders: cartItems.map((item) => ({
+        productId: item._id,
+        name: item.productName,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      street,
+      state,
+      city,
+      postalCode,
+      country,
+    });
+
+    await newOrder.save();
+    res
+      .status(201)
+      .json({ message: "Order placed successfully", order: newOrder });
+  } catch (error) {
+    console.error("Error placing order:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
 UserRoutes.post("/checkout", async (req, res) => {
   const { products, shippingFee } = req.body;
 
@@ -695,13 +753,13 @@ UserRoutes.post("/checkout", async (req, res) => {
     quantity: product.quantity,
   }));
 
-  // Add shipping fee as a separate line item
+  // Add shipping fee
   if (shippingFee) {
     lineItems.push({
       price_data: {
         currency: "usd",
         product_data: { name: "Shipping Fee" },
-        unit_amount: Math.round(Number(shippingFee) * 100), // Convert to cents
+        unit_amount: Math.round(Number(shippingFee) * 100),
       },
       quantity: 1,
     });
@@ -716,17 +774,58 @@ UserRoutes.post("/checkout", async (req, res) => {
       cancel_url: "https://villyz-store.vercel.app/cancel",
     });
 
-    // Fetch payment_intent separately
+    // Fetch payment_intent
     const sessionDetails = await stripe.checkout.sessions.retrieve(session.id);
 
     res.json({
       id: session.id,
-      paymentReference: sessionDetails.payment_intent, // ✅ Include payment reference
+      paymentReference: sessionDetails.payment_intent, // ✅ Store this for tracking
     });
   } catch (error) {
     console.error("Stripe Checkout Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Webhook to Listen for Successful Payments
+UserRoutes.post(
+  "/webhook",
+  express.raw({ type: "application/json" }), // Ensures raw body for Stripe
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error("❌ Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // ✅ Handle successful payment event
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+
+      console.log("✅ Payment successful! Sending order...");
+
+      try {
+        await axios.post("https://villyzstore.onrender.com/addOrder", {
+          paymentReference: session.payment_intent,
+          email: session.customer_email,
+        });
+
+        console.log("✅ Order sent successfully!");
+      } catch (error) {
+        console.error("❌ Failed to send order:", error);
+      }
+    }
+
+    res.status(200).send("Webhook received");
+  }
+);
 
 module.exports = UserRoutes;

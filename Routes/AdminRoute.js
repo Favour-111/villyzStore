@@ -396,62 +396,6 @@ route.delete("/blog/delete/:id", async (req, res) => {
   }
 });
 
-route.post("/addOrder", async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      OrderPrice, // Changed to camelCase
-      PaymentStatus,
-      paymentReference,
-      DeliveryFee,
-      orderStatus, // Default value
-      PhoneNumber,
-      cartItems = [], // Ensure it's always an array
-      street,
-      state,
-      city,
-      postalCode,
-      country,
-    } = req.body;
-
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      return res.status(400).json({ error: "Cart items cannot be empty" });
-    }
-
-    const newOrder = new OrderModel({
-      name,
-      email,
-      OrderPrice,
-      PaymentStatus,
-      paymentReference,
-      PhoneNumber,
-      DeliveryFee,
-      orderStatus,
-      Orders: cartItems.map((item) => ({
-        productId: item._id,
-        name: item.productName,
-        image: item.image,
-        price: item.price,
-        quantity: item.quantity,
-      })),
-      street,
-      state,
-      city,
-      postalCode,
-      country,
-    });
-
-    await newOrder.save();
-    res
-      .status(201)
-      .json({ message: "Order placed successfully", order: newOrder });
-  } catch (error) {
-    console.error("Error placing order:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
-  }
-});
-
 // 📌 Get a single order by ID
 route.get("/order/:id", async (req, res) => {
   try {

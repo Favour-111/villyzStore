@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const OrderSchema = new mongoose.Schema(
   {
+    UserID: {
+      type: "string",
+    },
     name: {
       type: "string",
     },
