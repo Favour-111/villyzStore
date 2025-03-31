@@ -787,45 +787,4 @@ UserRoutes.post("/checkout", async (req, res) => {
   }
 });
 
-// Webhook to Listen for Successful Payments
-UserRoutes.post(
-  "/webhook",
-  express.raw({ type: "application/json" }), // Ensures raw body for Stripe
-  async (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.error("❌ Webhook signature verification failed:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // ✅ Handle successful payment event
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-
-      console.log("✅ Payment successful! Sending order...");
-
-      try {
-        await axios.post("https://villyzstore.onrender.com/addOrder", {
-          paymentReference: session.payment_intent,
-          email: session.customer_email,
-        });
-
-        console.log("✅ Order sent successfully!");
-      } catch (error) {
-        console.error("❌ Failed to send order:", error);
-      }
-    }
-
-    res.status(200).send("Webhook received");
-  }
-);
-
 module.exports = UserRoutes;
