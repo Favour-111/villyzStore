@@ -6,7 +6,7 @@ const cors = require("cors");
 const Route = require("./Routes/Route");
 const AdminRoute = require("./Routes/AdminRoute");
 dotenv.config();
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // Connecting to MongoDB
 mongoose
   .connect(process.env.URL, {})
@@ -42,7 +42,7 @@ app.post(
       console.log("✅ Payment successful! Sending order...");
 
       try {
-        await axios.post("http://localhost:5000/addOrder", {
+        await axios.post("https://villyzstore.onrender.com/addOrder", {
           paymentReference: session.payment_intent,
           email: session.customer_email,
         });
