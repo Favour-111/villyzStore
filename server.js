@@ -7,6 +7,7 @@ const Route = require("./Routes/Route");
 const AdminRoute = require("./Routes/AdminRoute");
 dotenv.config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const axios = require("axios");
 // Connecting to MongoDB
 mongoose
   .connect(process.env.URL, {})
