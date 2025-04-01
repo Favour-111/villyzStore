@@ -412,20 +412,26 @@ route.get("/order/:id", async (req, res) => {
 
 // 📌 Update order status automatically (e.g., from "Pending" to "Delivered")
 route.put("/updateOrderStatus/:id", async (req, res) => {
+  const { id } = req.params;
+  const { orderStatus } = req.body;
+
+  console.log("Received orderStatus:", orderStatus); // Debugging log
+
   try {
-    const order = await OrderModel.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+    const updatedOrder = await OrderModel.findByIdAndUpdate(
+      id,
+      { orderStatus },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    // Example: If order status is pending, change it to delivered
-    order.orderStatus = "Delivered";
-
-    await order.save();
-    res.json({ message: "Order status updated", order });
+    res.json(updatedOrder);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ message: "Error updating order status" });
   }
 });
 
