@@ -44,8 +44,8 @@ app.post(
 
       try {
         await axios.post("https://villyzstore.onrender.com/addOrder", {
-          paymentReference: session.payment_intent,
-          email: null,
+          paymentReference: session.Description,
+          email: session.Customer,
         });
 
         console.log("✅ Order sent successfully!");
