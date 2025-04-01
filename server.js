@@ -38,19 +38,12 @@ app.post(
 
     // ✅ Handle payment success event
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-
       console.log("✅ Payment successful! Sending order...");
 
-      const orderData = {
-        paymentReference: "pi_3R8sSIRjQM7yvxj01f2zOFKB",
-        email: "example@example.com", // or null if that's allowed
-      };
-
       axios
-        .post("https://villyzstore.onrender.com/addOrder", orderData)
+        .post("https://villyzstore.onrender.com/addOrder")
         .then((response) => {
-          console.log("Order added:", response.data);
+          console.log("Order added:", response);
         })
         .catch((error) => {
           console.error("Error adding order:", error.response);
