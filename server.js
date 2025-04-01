@@ -42,16 +42,19 @@ app.post(
 
       console.log("✅ Payment successful! Sending order...");
 
-      try {
-        await axios.post("https://villyzstore.onrender.com/addOrder", {
-          paymentReference: session.Description,
-          email: session.Customer,
-        });
+      const orderData = {
+        paymentReference: "pi_3R8sSIRjQM7yvxj01f2zOFKB",
+        email: "example@example.com", // or null if that's allowed
+      };
 
-        console.log("✅ Order sent successfully!");
-      } catch (error) {
-        console.error("❌ Failed to send order:", error);
-      }
+      axios
+        .post("https://villyzstore.onrender.com/addOrder", orderData)
+        .then((response) => {
+          console.log("Order added:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error adding order:", error.response);
+        });
     }
 
     res.status(200).send("Webhook received");
