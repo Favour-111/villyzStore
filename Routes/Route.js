@@ -772,7 +772,7 @@ UserRoutes.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "https://villyz-store.vercel.app/success",
+      success_url: `https://villyz-store.vercel.app/success?payment_intent=${sessionDetails.payment_intent}`,
       cancel_url: "https://villyz-store.vercel.app/cancel",
     });
 
