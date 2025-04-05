@@ -773,9 +773,9 @@ UserRoutes.post("/checkout", async (req, res) => {
       line_items: lineItems,
       mode: "payment",
       success_url:
-        "https://villyz-store-md6b-m1v1g4wpu-favour-111s-projects.vercel.app//success",
+        "https://villyz-store-md6b-m1v1g4wpu-favour-111s-projects.vercel.app/success",
       cancel_url:
-        "https://villyz-store-md6b-m1v1g4wpu-favour-111s-projects.vercel.app//cancel",
+        "https://villyz-store-md6b-m1v1g4wpu-favour-111s-projects.vercel.app/cancel",
     });
 
     // Fetch payment_intent (optional)
