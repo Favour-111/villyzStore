@@ -122,7 +122,7 @@ UserRoutes.post("/users", async (req, res) => {
       userid: user._id,
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
-    const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
+    const link = `villyz-store-md6b.vercel.app/users/${user._id}/verify/${token.token}`;
     await verifyEmail(user.email, link);
     return res.status(201).json({
       success: true,
@@ -332,7 +332,7 @@ UserRoutes.post("/login", async (req, res) => {
           token: crypto.randomBytes(32).toString("hex"),
         }).save();
       }
-      const link = `https://villyz-store.onrender.com/users/${user._id}/verify/${token.token}`;
+      const link = `villyz-store-md6b.vercel.app/users/${user._id}/verify/${token.token}`;
       await verifyEmail(user.email, link);
       return res.status(201).json({
         success: false,
@@ -438,15 +438,15 @@ UserRoutes.post("/forgot_password", async (req, res) => {
           <p>Hello,</p>
           <p>We received a request to reset your password. Click the button below to reset it:</p>
           <div style="text-align: center; margin: 20px 0;">
-            <a href="https://villyz-store.onrender.com/reset-password/${user._id}/${token.token}" 
+            <a href="villyz-store-md6b.vercel.app/reset-password/${user._id}/${token.token}" 
                style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 5px; display: inline-block; font-size: 16px;">
               Reset Password
             </a>
           </div>
           <p>If you did not request a password reset, please ignore this email.</p>
           <p>If the button above doesn’t work, copy and paste the link below into your browser:</p>
-          <p><a href="https://villyz-store.onrender.com/reset-password/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
-            https://villyz-store.onrender.com/reset-password/${user._id}/${token.token}
+          <p><a href="villyz-store-md6b.vercel.app/reset-password/${user._id}/${token.token}" style="word-break: break-all; color: #007bff;">
+            villyz-store-md6b.vercel.app/reset-password/${user._id}/${token.token}
           </a></p>
           <p>Best regards,<br>Villyz Team</p>
         </div>
@@ -772,8 +772,8 @@ UserRoutes.post("/checkout", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "https://villyz-store.onrender.com/success",
-      cancel_url: "https://villyz-store.onrender.com/cancel",
+      success_url: "villyz-store-md6b.vercel.app/success",
+      cancel_url: "villyz-store-md6b.vercel.app/cancel",
     });
 
     // Fetch payment_intent (optional)
