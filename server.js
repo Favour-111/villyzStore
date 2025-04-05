@@ -18,6 +18,7 @@ mongoose
   });
 //Port
 app.use(express.json());
+app.use("/api/users/webhook", express.raw({ type: "application/json" })); // BEFORE app.use(express.json())
 app.use(cors());
 app.use(AdminRoute);
 app.use(Route);

@@ -9,6 +9,8 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const AddressModel = require("../Model/AddressModel");
 const OrderModel = require("../Model/OrderModel");
+const { default: axios } = require("axios");
+const endpointSecret = "whsec_9KLOdyRNPx8or1znZV09J3GPWvmo78Mu";
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // User Registration
 
@@ -739,7 +741,20 @@ UserRoutes.post("/addOrder", async (req, res) => {
   }
 });
 UserRoutes.post("/checkout", async (req, res) => {
-  const { products, shippingFee } = req.body;
+  const {
+    products,
+    shippingFee,
+    UserID,
+    name,
+    email,
+    OrderPrice,
+    PhoneNumber,
+    street,
+    city,
+    state,
+    postalCode,
+    country,
+  } = req.body;
 
   const lineItems = products.map((product) => ({
     price_data: {
@@ -772,19 +787,86 @@ UserRoutes.post("/checkout", async (req, res) => {
       mode: "payment",
       success_url: "https://villyz-store.vercel.app/success",
       cancel_url: "https://villyz-store.vercel.app/cancel",
+      metadata: {
+        order: JSON.stringify({
+          UserID,
+          name,
+          email,
+          OrderPrice,
+          DeliveryFee: shippingFee,
+          orderStatus: "pending",
+          PhoneNumber,
+          cartItems: products,
+          street,
+          state,
+          city,
+          postalCode,
+          country,
+        }),
+      },
     });
 
-    // Fetch payment_intent
+    // Fetch payment_intent (optional)
     const sessionDetails = await stripe.checkout.sessions.retrieve(session.id);
 
     res.json({
       id: session.id,
-      paymentReference: sessionDetails.payment_intent, // ✅ Store this for tracking
+      paymentReference: sessionDetails.payment_intent,
     });
   } catch (error) {
     console.error("Stripe Checkout Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
+
+UserRoutes.post(
+  "/webhook",
+  express.raw({ type: "application/json" }), // Important: raw body
+  async (request, response) => {
+    const sig = request.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err.message);
+      return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // 🔥 When payment is successful
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+
+      try {
+        // Get order from metadata
+        const order = JSON.parse(session.metadata.order);
+
+        // Build payload for /addOrder
+        const orderPayload = {
+          ...order,
+          PaymentStatus: "Paid",
+          paymentReference: session.payment_intent,
+        };
+
+        // 🔥 Call /addOrder route on your server
+        const result = await axios.post(
+          "https://villyzstore.onrender.com/addOrder", // Change to your live URL if deployed
+          orderPayload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("✅ Order created from webhook:", result.data);
+      } catch (err) {
+        console.error("❌ Error creating order from webhook:", err.message);
+      }
+    }
+
+    response.status(200).json({ received: true });
+  }
+);
 
 module.exports = UserRoutes;
