@@ -7,6 +7,7 @@ const { upload1, upload2, upload3 } = require("../upload"); // Correctly import 
 const { cloudinary } = require("../cloudinary");
 const mongoose = require("mongoose");
 const OrderModel = require("../Model/OrderModel");
+const Location = require("../Model/Location");
 //applying multer
 //creating product
 route.post("/products", upload1.single("image"), async (req, res) => {
@@ -470,6 +471,70 @@ route.delete("/deleteOrders", async (req, res) => {
   } catch (error) {
     console.error("Error deleting orders:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+route.post("/countries", async (req, res) => {
+  const { country, price } = req.body;
+  try {
+    const newLocation = new Location({ country, price });
+    await newLocation.save();
+    res.status(201).json(newLocation);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add or update a state fee under a specific country
+route.put("/countries/:country/states", async (req, res) => {
+  const { state, price } = req.body;
+  try {
+    const location = await Location.findOne({ country: req.params.country });
+    if (!location) return res.status(404).json({ error: "Country not found" });
+
+    location.states.set(state, price);
+    await location.save();
+    res.json(location);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Delete a country and its associated fees
+route.delete("/countries/:country", async (req, res) => {
+  try {
+    const result = await Location.deleteOne({ country: req.params.country });
+    if (result.deletedCount === 0)
+      return res.status(404).json({ error: "Country not found" });
+    res.json({ message: "Country deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a specific state fee under a country
+route.delete("/countries/:country/states/:state", async (req, res) => {
+  try {
+    const location = await Location.findOne({ country: req.params.country });
+    if (!location) return res.status(404).json({ error: "Country not found" });
+
+    if (!location.states.has(req.params.state))
+      return res.status(404).json({ error: "State not found" });
+
+    location.states.delete(req.params.state);
+    await location.save();
+    res.json({ message: "State deleted successfully", location });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Retrieve all locations with their fees
+route.get("/countries", async (req, res) => {
+  try {
+    const locations = await Location.find();
+    res.json(locations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
